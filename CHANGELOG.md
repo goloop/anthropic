@@ -1,0 +1,22 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.1.0]
+
+First release: a client for the Anthropic (Claude) API on the `goloop/ai`
+interface.
+
+### Added
+- `Client` implementing `ai.Client`: `Generate` for a single response and
+  `Stream` for token-by-token streaming over the Messages API.
+- System prompts, multimodal image input and tool use (function calling),
+  including streamed tool calls.
+- Native endpoints: `CountTokens`, `Models`/`GetModel` and the message batches
+  API (`CreateBatch`, `GetBatch`, `ListBatches`, `CancelBatch`, `BatchResults`).
+- Functional options: `WithBaseURL`, `WithHTTPClient`, `WithTimeout`,
+  `WithMaxRetries`, `WithHeader`, `WithVersion`, `WithBeta`, `WithMaxTokens`.
+- Retries on 429 and 5xx with backoff; normalized `*ai.APIError` errors.
