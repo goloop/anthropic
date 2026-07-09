@@ -132,17 +132,40 @@ func (c *Client) Stream(ctx context.Context, req *ai.Request) iter.Seq2[ai.Chunk
 				yield(ai.Chunk{Done: true, Usage: &final, Raw: json.RawMessage(data)}, nil)
 				return
 			case "error":
-				msg := ""
+				msg, typ := "", ""
 				if ev.Error != nil {
-					msg = ev.Error.Message
+					msg, typ = ev.Error.Message, ev.Error.Type
 				}
+				// The HTTP status is 200 for a mid-stream error event, so
+				// map the error type to a meaningful status instead.
 				yield(ai.Chunk{}, &ai.APIError{
-					Status:  resp.StatusCode,
+					Status:  streamErrorStatus(typ),
+					Type:    typ,
 					Message: msg,
 					Raw:     append(json.RawMessage(nil), data...),
 				})
 				return
 			}
 		}
+
+		// The stream ended without a message_stop event: it was truncated.
+		yield(ai.Chunk{}, io.ErrUnexpectedEOF)
+	}
+}
+
+// streamErrorStatus maps an Anthropic stream error type to an HTTP-like status
+// so callers can branch on APIError.Status as they would for a request error.
+func streamErrorStatus(typ string) int {
+	switch typ {
+	case "overloaded_error":
+		return 529
+	case "rate_limit_error":
+		return http.StatusTooManyRequests
+	case "authentication_error", "permission_error":
+		return http.StatusUnauthorized
+	case "invalid_request_error":
+		return http.StatusBadRequest
+	default:
+		return 0
 	}
 }
