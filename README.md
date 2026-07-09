@@ -40,7 +40,7 @@ func main() {
 	c := anthropic.New(os.Getenv("ANTHROPIC_API_KEY"))
 
 	resp, err := c.Generate(context.Background(), &ai.Request{
-		Model:     anthropic.ModelClaude37SonnetLatest,
+		Model:     anthropic.ModelClaudeSonnet5,
 		MaxTokens: 256,
 		Messages:  []ai.Message{ai.UserText("Say hello in one word.")},
 	})
@@ -72,7 +72,7 @@ for chunk, err := range c.Stream(ctx, req) {
 
 ```go
 req := &ai.Request{
-	Model:     anthropic.ModelClaude37SonnetLatest,
+	Model:     anthropic.ModelClaudeSonnet5,
 	MaxTokens: 512,
 	Messages:  []ai.Message{ai.UserText("What is the weather in Kyiv?")},
 	Tools: []ai.Tool{{
@@ -96,7 +96,7 @@ for _, call := range resp.ToolCalls() {
 ```go
 img, _ := os.ReadFile("chart.png")
 req := &ai.Request{
-	Model:     anthropic.ModelClaude37SonnetLatest,
+	Model:     anthropic.ModelClaudeSonnet5,
 	MaxTokens: 512,
 	Messages: []ai.Message{{
 		Role: ai.RoleUser,
@@ -117,7 +117,7 @@ For Anthropic-only options build a `MessagesRequest` and call `Messages` or
 ```go
 topK := 40
 resp, _ := c.Messages(ctx, &anthropic.MessagesRequest{
-	Model:     anthropic.ModelClaudeSonnet4,
+	Model:     anthropic.ModelClaudeSonnet5,
 	MaxTokens: 1024,
 	TopK:      &topK,
 	Thinking:  &anthropic.Thinking{Type: "enabled", BudgetTokens: 2048},

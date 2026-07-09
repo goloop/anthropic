@@ -11,22 +11,22 @@ import (
 func ExampleNew() {
 	c := anthropic.New("sk-ant-...")
 	_ = c // use c.Generate, c.Stream, ...
-	fmt.Println(anthropic.ModelClaude37SonnetLatest)
-	// Output: claude-3-7-sonnet-latest
+	fmt.Println(anthropic.ModelClaudeSonnet5)
+	// Output: claude-sonnet-5
 }
 
 // ExampleClient_Generate builds a request. Sending it needs a real API key, so
 // this example only shows the shape.
 func ExampleClient_Generate() {
 	req := &ai.Request{
-		Model:     anthropic.ModelClaude35HaikuLatest,
+		Model:     anthropic.ModelClaudeHaiku45,
 		MaxTokens: 128,
 		Messages: []ai.Message{
 			ai.UserText("Name the capital of France."),
 		},
 	}
 	fmt.Println(req.Model, len(req.Messages))
-	// Output: claude-3-5-haiku-latest 1
+	// Output: claude-haiku-4-5-20251001 1
 }
 
 // ExampleClient_Messages shows the native Messages request, which reaches
@@ -35,7 +35,7 @@ func ExampleClient_Generate() {
 func ExampleClient_Messages() {
 	topK := 40
 	req := &anthropic.MessagesRequest{
-		Model:     anthropic.ModelClaudeSonnet4,
+		Model:     anthropic.ModelClaudeSonnet5,
 		MaxTokens: 1024,
 		TopK:      &topK,
 		Thinking:  &anthropic.Thinking{Type: "enabled", BudgetTokens: 2048},
@@ -49,7 +49,7 @@ func ExampleClient_Messages() {
 		}},
 	}
 	fmt.Println(req.Model, *req.TopK)
-	// Output: claude-sonnet-4-20250514 40
+	// Output: claude-sonnet-5 40
 }
 
 // ExampleTool shows a tool definition passed with a request.

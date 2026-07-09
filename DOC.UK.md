@@ -58,7 +58,7 @@ c = anthropic.New(apiKey,
 
 ```go
 resp, err := c.Generate(ctx, &ai.Request{
-	Model:     anthropic.ModelClaude37SonnetLatest,
+	Model:     anthropic.ModelClaudeSonnet5,
 	MaxTokens: 256,
 	System:    "You are concise.",
 	Messages: []ai.Message{
@@ -148,7 +148,7 @@ n, err := c.CountTokens(ctx, req)
 
 ```go
 models, err := c.Models(ctx)
-m, err := c.GetModel(ctx, "claude-3-7-sonnet-latest")
+m, err := c.GetModel(ctx, "claude-sonnet-5")
 ```
 
 `Model` містить `ID`, `DisplayName`, `CreatedAt`, `Type`.

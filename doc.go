@@ -9,7 +9,7 @@
 //
 //	c := anthropic.New(os.Getenv("ANTHROPIC_API_KEY"))
 //	resp, err := c.Generate(ctx, &ai.Request{
-//	    Model:    anthropic.ModelClaude37SonnetLatest,
+//	    Model:    anthropic.ModelClaudeSonnet5,
 //	    Messages: []ai.Message{ai.UserText("Say hello in one word.")},
 //	})
 //

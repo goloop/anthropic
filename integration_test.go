@@ -7,6 +7,7 @@
 package anthropic_test
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"os"
@@ -16,7 +17,10 @@ import (
 	"github.com/goloop/anthropic"
 )
 
-const integrationModel = anthropic.ModelClaude35HaikuLatest
+// integrationModel is the model the smoke tests use. Override it with the
+// ANTHROPIC_MODEL env var; the default is a current, inexpensive model so the
+// tests do not break when older model names are retired.
+var integrationModel = cmp.Or(os.Getenv("ANTHROPIC_MODEL"), anthropic.ModelClaudeHaiku45)
 
 func integrationClient(t *testing.T) *anthropic.Client {
 	t.Helper()

@@ -13,14 +13,12 @@ const (
 	DefaultMaxTokens = 1024
 )
 
-// Convenience model identifiers. Any model string is accepted; the "-latest"
-// aliases track the newest release of a model line. Use Models to discover
-// what the account can call.
+// Convenience model identifiers for the current model generation. Any model
+// string is accepted; use Models to discover what the account can call.
 const (
-	ModelClaude37SonnetLatest = "claude-3-7-sonnet-latest"
-	ModelClaude35HaikuLatest  = "claude-3-5-haiku-latest"
-	ModelClaudeSonnet4        = "claude-sonnet-4-20250514"
-	ModelClaudeOpus4          = "claude-opus-4-20250514"
+	ModelClaudeSonnet5 = "claude-sonnet-5"
+	ModelClaudeOpus48  = "claude-opus-4-8"
+	ModelClaudeHaiku45 = "claude-haiku-4-5-20251001"
 )
 
 // Client is an Anthropic API client. It implements [ai.Client] and adds the
