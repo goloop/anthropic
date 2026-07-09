@@ -29,6 +29,29 @@ func ExampleClient_Generate() {
 	// Output: claude-3-5-haiku-latest 1
 }
 
+// ExampleClient_Messages shows the native Messages request, which reaches
+// Anthropic-only options the shared ai.Request does not model: top_k, extended
+// thinking, metadata and prompt caching via CacheControl.
+func ExampleClient_Messages() {
+	topK := 40
+	req := &anthropic.MessagesRequest{
+		Model:     anthropic.ModelClaudeSonnet4,
+		MaxTokens: 1024,
+		TopK:      &topK,
+		Thinking:  &anthropic.Thinking{Type: "enabled", BudgetTokens: 2048},
+		Messages: []anthropic.MessageParam{{
+			Role: "user",
+			Content: []anthropic.ContentBlock{{
+				Type:         "text",
+				Text:         "Summarize the document.",
+				CacheControl: &anthropic.CacheControl{Type: "ephemeral"},
+			}},
+		}},
+	}
+	fmt.Println(req.Model, *req.TopK)
+	// Output: claude-sonnet-4-20250514 40
+}
+
 // ExampleTool shows a tool definition passed with a request.
 func ExampleTool() {
 	tool := ai.Tool{

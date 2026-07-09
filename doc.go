@@ -3,7 +3,9 @@
 //
 // The Client implements ai.Client, so Generate and Stream work the same as
 // with any other goloop AI provider. On top of that it exposes Anthropic's
-// native endpoints: token counting, model listing and the message batches API.
+// native endpoints: the Messages API with Anthropic-only options (top_k,
+// extended thinking, metadata and prompt caching), token counting, model
+// listing and the message batches API.
 //
 //	c := anthropic.New(os.Getenv("ANTHROPIC_API_KEY"))
 //	resp, err := c.Generate(ctx, &ai.Request{
