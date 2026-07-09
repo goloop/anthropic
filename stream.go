@@ -11,24 +11,81 @@ import (
 	"github.com/goloop/ai"
 )
 
-type streamEvent struct {
-	Type         string        `json:"type"`
-	Index        int           `json:"index"`
-	Message      *wireResponse `json:"message"`
-	ContentBlock *wireBlock    `json:"content_block"`
-	Delta        *streamDelta  `json:"delta"`
-	Usage        *wireUsage    `json:"usage"`
+// StreamEvent is one raw event of a streaming Messages response. The Type
+// field selects which fields are populated ("message_start", "content_block_
+// start", "content_block_delta", "content_block_stop", "message_delta",
+// "message_stop", "error").
+type StreamEvent struct {
+	Type         string            `json:"type"`
+	Index        int               `json:"index"`
+	Message      *MessagesResponse `json:"message"`
+	ContentBlock *ContentBlock     `json:"content_block"`
+	Delta        *StreamDelta      `json:"delta"`
+	Usage        *Usage            `json:"usage"`
 	Error        *struct {
 		Type    string `json:"type"`
 		Message string `json:"message"`
 	} `json:"error"`
 }
 
-type streamDelta struct {
+// StreamDelta is the incremental payload of a content_block_delta or
+// message_delta event.
+type StreamDelta struct {
 	Type        string `json:"type"`
 	Text        string `json:"text"`
 	PartialJSON string `json:"partial_json"`
 	StopReason  string `json:"stop_reason"`
+}
+
+// openMessagesStream opens the streaming /v1/messages connection for a native
+// request. The caller owns the returned response body.
+func (c *Client) openMessagesStream(ctx context.Context, req *MessagesRequest) (*http.Response, error) {
+	req.Stream = true
+	body, err := json.Marshal(req)
+	if err != nil {
+		return nil, err
+	}
+	h := c.headers()
+	h.Set("accept", "text/event-stream")
+	resp, err := c.opts.Do(ctx, http.MethodPost, c.opts.BaseURL+"/v1/messages", body, h)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		data, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		return nil, parseError(resp.StatusCode, data)
+	}
+	return resp, nil
+}
+
+// MessagesStream sends a native streaming Messages request and yields each raw
+// event as it arrives. Use it for Anthropic-only options; use [Client.Stream]
+// for the shared, provider-agnostic chunk stream.
+func (c *Client) MessagesStream(ctx context.Context, req *MessagesRequest) iter.Seq2[StreamEvent, error] {
+	return func(yield func(StreamEvent, error) bool) {
+		r := *req // do not mutate the caller's request
+		resp, err := c.openMessagesStream(ctx, &r)
+		if err != nil {
+			yield(StreamEvent{}, err)
+			return
+		}
+		defer resp.Body.Close()
+
+		for data, err := range ai.SSEEvents(resp.Body) {
+			if err != nil {
+				yield(StreamEvent{}, err)
+				return
+			}
+			var ev StreamEvent
+			if json.Unmarshal([]byte(data), &ev) != nil {
+				continue
+			}
+			if !yield(ev, nil) {
+				return
+			}
+		}
+	}
 }
 
 // Stream sends a messages request with streaming enabled and returns an
@@ -37,32 +94,17 @@ type streamDelta struct {
 // ToolCall set; the final chunk has Done true and carries token usage.
 func (c *Client) Stream(ctx context.Context, req *ai.Request) iter.Seq2[ai.Chunk, error] {
 	return func(yield func(ai.Chunk, error) bool) {
-		wr, err := c.buildRequest(req, true)
+		mreq, err := c.buildRequest(req, true)
 		if err != nil {
 			yield(ai.Chunk{}, err)
 			return
 		}
-		body, err := json.Marshal(wr)
-		if err != nil {
-			yield(ai.Chunk{}, err)
-			return
-		}
-
-		h := c.headers()
-		h.Set("accept", "text/event-stream")
-		resp, err := c.opts.Do(
-			ctx, http.MethodPost, c.opts.BaseURL+"/v1/messages", body, h,
-		)
+		resp, err := c.openMessagesStream(ctx, &mreq)
 		if err != nil {
 			yield(ai.Chunk{}, err)
 			return
 		}
 		defer resp.Body.Close()
-		if resp.StatusCode != http.StatusOK {
-			data, _ := io.ReadAll(resp.Body)
-			yield(ai.Chunk{}, parseError(resp.StatusCode, data))
-			return
-		}
 
 		type toolAcc struct {
 			id, name string
@@ -77,7 +119,7 @@ func (c *Client) Stream(ctx context.Context, req *ai.Request) iter.Seq2[ai.Chunk
 				return
 			}
 
-			var ev streamEvent
+			var ev StreamEvent
 			if e := json.Unmarshal([]byte(data), &ev); e != nil {
 				yield(ai.Chunk{}, e)
 				return

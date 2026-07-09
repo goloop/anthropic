@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.1]
 
+### Added
+- Native Messages API: `Messages` and `MessagesStream` over exported request
+  and response types (`MessagesRequest`, `MessageParam`, `ContentBlock`, ...),
+  exposing Anthropic-only options - `TopK`, `Thinking` (extended thinking),
+  `Metadata` and prompt caching via `CacheControl`. `Usage` now reports cache
+  token counts.
+
 ### Fixed
 - A mid-stream `error` event now reports a meaningful status (for example 529
   for `overloaded_error`) instead of the HTTP 200 of the open connection.

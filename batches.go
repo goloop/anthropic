@@ -49,8 +49,8 @@ type BatchResult struct {
 // CreateBatch submits a set of message requests for asynchronous processing.
 func (c *Client) CreateBatch(ctx context.Context, items []BatchItem) (*Batch, error) {
 	type reqItem struct {
-		CustomID string      `json:"custom_id"`
-		Params   wireRequest `json:"params"`
+		CustomID string          `json:"custom_id"`
+		Params   MessagesRequest `json:"params"`
 	}
 	var payload struct {
 		Requests []reqItem `json:"requests"`

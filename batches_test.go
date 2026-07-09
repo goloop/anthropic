@@ -17,8 +17,8 @@ func TestCreateAndGetBatch(t *testing.T) {
 		case r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/v1/messages/batches"):
 			var payload struct {
 				Requests []struct {
-					CustomID string      `json:"custom_id"`
-					Params   wireRequest `json:"params"`
+					CustomID string          `json:"custom_id"`
+					Params   MessagesRequest `json:"params"`
 				} `json:"requests"`
 			}
 			body, _ := io.ReadAll(r.Body)

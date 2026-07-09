@@ -37,7 +37,7 @@ func TestGenerateText(t *testing.T) {
 		if r.Header.Get("anthropic-version") == "" {
 			t.Errorf("missing anthropic-version")
 		}
-		var req wireRequest
+		var req MessagesRequest
 		body, _ := io.ReadAll(r.Body)
 		if err := json.Unmarshal(body, &req); err != nil {
 			t.Fatal(err)

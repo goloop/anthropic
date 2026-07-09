@@ -108,11 +108,37 @@ req := &ai.Request{
 }
 ```
 
+## Native Messages API
+
+For Anthropic-only options build a `MessagesRequest` and call `Messages` or
+`MessagesStream`. This reaches settings the shared `ai.Request` does not model -
+`TopK`, extended `Thinking`, `Metadata` and prompt caching via `CacheControl`:
+
+```go
+topK := 40
+resp, _ := c.Messages(ctx, &anthropic.MessagesRequest{
+	Model:     anthropic.ModelClaudeSonnet4,
+	MaxTokens: 1024,
+	TopK:      &topK,
+	Thinking:  &anthropic.Thinking{Type: "enabled", BudgetTokens: 2048},
+	Messages: []anthropic.MessageParam{{
+		Role: "user",
+		Content: []anthropic.ContentBlock{{
+			Type:         "text",
+			Text:         longSystemDoc,
+			CacheControl: &anthropic.CacheControl{Type: "ephemeral"},
+		}},
+	}},
+})
+```
+
 ## The API at a glance
 
 - `New(apiKey string, opts ...Option) *Client`
 - `Generate(ctx, *ai.Request) (*ai.Response, error)`
 - `Stream(ctx, *ai.Request) iter.Seq2[ai.Chunk, error]`
+- `Messages(ctx, *MessagesRequest) (*MessagesResponse, error)`,
+  `MessagesStream(ctx, *MessagesRequest) iter.Seq2[StreamEvent, error]`
 - `CountTokens(ctx, *ai.Request) (int, error)`
 - `Models(ctx) ([]Model, error)`, `GetModel(ctx, id) (*Model, error)`
 - `CreateBatch`, `GetBatch`, `ListBatches`, `CancelBatch`, `BatchResults`

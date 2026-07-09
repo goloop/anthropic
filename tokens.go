@@ -17,10 +17,10 @@ func (c *Client) CountTokens(ctx context.Context, req *ai.Request) (int, error) 
 	}
 
 	payload := struct {
-		Model    string        `json:"model"`
-		System   string        `json:"system,omitempty"`
-		Messages []wireMessage `json:"messages"`
-		Tools    []wireTool    `json:"tools,omitempty"`
+		Model    string           `json:"model"`
+		System   string           `json:"system,omitempty"`
+		Messages []MessageParam   `json:"messages"`
+		Tools    []ToolDefinition `json:"tools,omitempty"`
 	}{
 		Model:    wr.Model,
 		System:   wr.System,
