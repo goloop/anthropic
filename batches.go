@@ -84,21 +84,7 @@ func (c *Client) CancelBatch(ctx context.Context, id string) (*Batch, error) {
 
 // ListBatches returns batches for the account, most recent first.
 func (c *Client) ListBatches(ctx context.Context) ([]Batch, error) {
-	data, status, err := c.send(ctx, http.MethodGet, "/v1/messages/batches?limit=100", nil)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, parseError(status, data)
-	}
-
-	var out struct {
-		Data []Batch `json:"data"`
-	}
-	if err := json.Unmarshal(data, &out); err != nil {
-		return nil, err
-	}
-	return out.Data, nil
+	return listAll[Batch](ctx, c, "/v1/messages/batches", 100)
 }
 
 // BatchResults fetches and parses the JSONL results of a finished batch. The

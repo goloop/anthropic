@@ -17,21 +17,7 @@ type Model struct {
 
 // Models lists the models available to the account.
 func (c *Client) Models(ctx context.Context) ([]Model, error) {
-	data, status, err := c.send(ctx, http.MethodGet, "/v1/models?limit=1000", nil)
-	if err != nil {
-		return nil, err
-	}
-	if status != http.StatusOK {
-		return nil, parseError(status, data)
-	}
-
-	var out struct {
-		Data []Model `json:"data"`
-	}
-	if err := json.Unmarshal(data, &out); err != nil {
-		return nil, err
-	}
-	return out.Data, nil
+	return listAll[Model](ctx, c, "/v1/models", 1000)
 }
 
 // GetModel returns a single model by ID.

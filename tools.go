@@ -2,8 +2,11 @@ package anthropic
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -37,4 +40,39 @@ func (c *Client) send(
 		return nil, resp.StatusCode, err
 	}
 	return data, resp.StatusCode, nil
+}
+
+// listAll fetches every page of a cursor-paginated list endpoint and returns
+// the concatenated items. Anthropic returns {"data":[...],"has_more":bool,
+// "last_id":"..."}; pages are walked with the after_id query parameter until
+// has_more is false, so callers never silently see only the first page.
+func listAll[T any](ctx context.Context, c *Client, path string, limit int) ([]T, error) {
+	var all []T
+	afterID := ""
+	for {
+		u := fmt.Sprintf("%s?limit=%d", path, limit)
+		if afterID != "" {
+			u += "&after_id=" + url.QueryEscape(afterID)
+		}
+		data, status, err := c.send(ctx, http.MethodGet, u, nil)
+		if err != nil {
+			return nil, err
+		}
+		if status != http.StatusOK {
+			return nil, parseError(status, data)
+		}
+		var page struct {
+			Data    []T    `json:"data"`
+			HasMore bool   `json:"has_more"`
+			LastID  string `json:"last_id"`
+		}
+		if err := json.Unmarshal(data, &page); err != nil {
+			return nil, err
+		}
+		all = append(all, page.Data...)
+		if !page.HasMore || page.LastID == "" {
+			return all, nil
+		}
+		afterID = page.LastID
+	}
 }

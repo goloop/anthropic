@@ -83,11 +83,11 @@ func TestToolChoiceNone(t *testing.T) {
 	}
 }
 
-func TestRetryOn500(t *testing.T) {
+func TestRetryOnTransient(t *testing.T) {
 	var calls atomic.Int32
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if calls.Add(1) == 1 {
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusServiceUnavailable) // 503, retriable
 			return
 		}
 		io.WriteString(w, `{"model":"m","content":[{"type":"text","text":"ok"}],`+
