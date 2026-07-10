@@ -154,7 +154,8 @@ models, err := c.Models(ctx)
 m, err := c.GetModel(ctx, "claude-sonnet-5")
 ```
 
-`Model` reports `ID`, `DisplayName`, `CreatedAt` and `Type`.
+`Model` reports `ID`, `DisplayName`, `CreatedAt` and `Type`. `Models` walks the
+API's cursor pagination internally and returns the complete list in one call.
 
 ## Message batches
 
@@ -175,7 +176,8 @@ batch, err = c.CancelBatch(ctx, batch.ID)
 
 `BatchResults` returns one `BatchResult` per request, correlated by
 `CustomID`, with the raw result JSON. It returns `ErrNoResults` if the batch has
-not finished.
+not finished. `ListBatches`, like `Models`, follows the API's cursor pagination
+and returns every batch across all pages.
 
 ## Options
 

@@ -151,7 +151,8 @@ models, err := c.Models(ctx)
 m, err := c.GetModel(ctx, "claude-sonnet-5")
 ```
 
-`Model` містить `ID`, `DisplayName`, `CreatedAt`, `Type`.
+`Model` містить `ID`, `DisplayName`, `CreatedAt`, `Type`. `Models` внутрішньо
+проходить курсорну пагінацію API й повертає повний список одним викликом.
 
 ## Пакетні запити
 
@@ -172,7 +173,8 @@ batch, err = c.CancelBatch(ctx, batch.ID)
 
 `BatchResults` повертає по одному `BatchResult` на запит, зіставлений за
 `CustomID`, із сирим JSON результату. Повертає `ErrNoResults`, якщо пакет ще не
-завершився.
+завершився. `ListBatches`, як і `Models`, проходить курсорну пагінацію API й
+повертає всі пакети з усіх сторінок.
 
 ## Опції
 
