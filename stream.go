@@ -3,6 +3,7 @@ package anthropic
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"iter"
 	"net/http"
@@ -52,7 +53,7 @@ func (c *Client) openMessagesStream(ctx context.Context, req *MessagesRequest) (
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		data, _ := io.ReadAll(resp.Body)
+		data, _ := readLimited(resp.Body)
 		resp.Body.Close()
 		return nil, parseError(resp.StatusCode, data)
 	}
@@ -64,6 +65,10 @@ func (c *Client) openMessagesStream(ctx context.Context, req *MessagesRequest) (
 // for the shared, provider-agnostic chunk stream.
 func (c *Client) MessagesStream(ctx context.Context, req *MessagesRequest) iter.Seq2[StreamEvent, error] {
 	return func(yield func(StreamEvent, error) bool) {
+		if req == nil {
+			yield(StreamEvent{}, ai.ErrNoRequest)
+			return
+		}
 		r := *req // do not mutate the caller's request
 		resp, err := c.openMessagesStream(ctx, &r)
 		if err != nil {
@@ -78,8 +83,9 @@ func (c *Client) MessagesStream(ctx context.Context, req *MessagesRequest) iter.
 				return
 			}
 			var ev StreamEvent
-			if json.Unmarshal([]byte(data), &ev) != nil {
-				continue
+			if e := json.Unmarshal([]byte(data), &ev); e != nil {
+				yield(StreamEvent{}, e)
+				return
 			}
 			if !yield(ev, nil) {
 				return
@@ -158,6 +164,12 @@ func (c *Client) Stream(ctx context.Context, req *ai.Request) iter.Seq2[ai.Chunk
 					input := t.buf.String()
 					if input == "" {
 						input = "{}"
+					}
+					if !json.Valid([]byte(input)) {
+						yield(ai.Chunk{}, fmt.Errorf(
+							"anthropic: tool call %q has invalid JSON arguments",
+							t.name))
+						return
 					}
 					call := ai.ToolUse{ID: t.id, Name: t.name, Input: json.RawMessage(input)}
 					if !yield(ai.Chunk{ToolCall: &call, Raw: json.RawMessage(data)}, nil) {

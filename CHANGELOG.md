@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-07-12
+
+### Fixed
+- Response bodies are now read under a 64 MiB ceiling (`send`, the streaming
+  error path and `BatchResults`), so a malformed or hostile server cannot
+  exhaust memory with an unbounded body.
+- The native `MessagesStream` now surfaces a malformed SSE JSON payload as an
+  error instead of silently skipping the event, matching the provider-agnostic
+  `Stream`.
+- A streamed tool call whose accumulated arguments are not valid JSON is now
+  reported as an error rather than yielded as an unparseable `Input`.
+- `GetModel`, `GetBatch` and `CancelBatch` now escape the path segment, so an
+  ID with reserved characters cannot alter the request URL.
+- `Messages`, `MessagesStream` and `BatchResults` return an error instead of
+  panicking when passed a nil request or batch.
+
+### Changed
+- Requires `github.com/goloop/ai` v0.3.0.
+
 ## [0.1.4] - 2026-07-10
 
 ### Documentation

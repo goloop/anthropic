@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -22,7 +23,8 @@ func (c *Client) Models(ctx context.Context) ([]Model, error) {
 
 // GetModel returns a single model by ID.
 func (c *Client) GetModel(ctx context.Context, id string) (*Model, error) {
-	data, status, err := c.send(ctx, http.MethodGet, "/v1/models/"+id, nil)
+	data, status, err := c.send(ctx, http.MethodGet,
+		"/v1/models/"+url.PathEscape(id), nil)
 	if err != nil {
 		return nil, err
 	}

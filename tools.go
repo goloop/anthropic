@@ -10,6 +10,24 @@ import (
 	"strings"
 )
 
+// maxResponseBytes caps how much of a response body is read into memory, so a
+// malformed or hostile server cannot exhaust memory with an unbounded stream.
+const maxResponseBytes = 64 << 20 // 64 MiB
+
+// readLimited reads up to maxResponseBytes from r, returning an error if the
+// body exceeds that ceiling rather than silently truncating it.
+func readLimited(r io.Reader) ([]byte, error) {
+	data, err := io.ReadAll(io.LimitReader(r, maxResponseBytes+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(data)) > maxResponseBytes {
+		return nil, fmt.Errorf(
+			"anthropic: response body exceeds %d bytes", maxResponseBytes)
+	}
+	return data, nil
+}
+
 // headers returns the headers common to every Anthropic request.
 func (c *Client) headers() http.Header {
 	h := http.Header{}
@@ -35,7 +53,7 @@ func (c *Client) send(
 	}
 	defer resp.Body.Close()
 
-	data, err := io.ReadAll(resp.Body)
+	data, err := readLimited(resp.Body)
 	if err != nil {
 		return nil, resp.StatusCode, err
 	}

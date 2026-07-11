@@ -122,6 +122,9 @@ func (c *Client) Messages(ctx context.Context, req *MessagesRequest) (*MessagesR
 }
 
 func (c *Client) messages(ctx context.Context, req *MessagesRequest) (*MessagesResponse, []byte, error) {
+	if req == nil {
+		return nil, nil, ai.ErrNoRequest
+	}
 	body, err := json.Marshal(req)
 	if err != nil {
 		return nil, nil, err

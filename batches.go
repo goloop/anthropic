@@ -3,8 +3,8 @@ package anthropic
 import (
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -74,12 +74,14 @@ func (c *Client) CreateBatch(ctx context.Context, items []BatchItem) (*Batch, er
 
 // GetBatch returns the current state of a batch.
 func (c *Client) GetBatch(ctx context.Context, id string) (*Batch, error) {
-	return c.batchCall(ctx, http.MethodGet, "/v1/messages/batches/"+id, nil)
+	return c.batchCall(ctx, http.MethodGet,
+		"/v1/messages/batches/"+url.PathEscape(id), nil)
 }
 
 // CancelBatch requests cancellation of a batch still in progress.
 func (c *Client) CancelBatch(ctx context.Context, id string) (*Batch, error) {
-	return c.batchCall(ctx, http.MethodPost, "/v1/messages/batches/"+id+"/cancel", nil)
+	return c.batchCall(ctx, http.MethodPost,
+		"/v1/messages/batches/"+url.PathEscape(id)+"/cancel", nil)
 }
 
 // ListBatches returns batches for the account, most recent first.
@@ -91,7 +93,7 @@ func (c *Client) ListBatches(ctx context.Context) ([]Batch, error) {
 // batch must have ended and carry a ResultsURL; otherwise ErrNoResults is
 // returned.
 func (c *Client) BatchResults(ctx context.Context, b *Batch) ([]BatchResult, error) {
-	if b.ResultsURL == "" {
+	if b == nil || b.ResultsURL == "" {
 		return nil, ErrNoResults
 	}
 
@@ -101,7 +103,7 @@ func (c *Client) BatchResults(ctx context.Context, b *Batch) ([]BatchResult, err
 	}
 	defer resp.Body.Close()
 
-	data, err := io.ReadAll(resp.Body)
+	data, err := readLimited(resp.Body)
 	if err != nil {
 		return nil, err
 	}
