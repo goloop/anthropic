@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-08-05
+
+### Added
+- `ai.Request.Format` is honoured. This provider has no `response_format` of
+  its own, so the request is put to the model in the system prompt, in the
+  wording every driver without native support shares (`ai.Format.Instruction`),
+  and `ai.Response.Format` reports `ai.FormatEmulated` - a request, not a
+  guarantee. The caller's own system prompt is kept and the instruction follows
+  it. `ai.Response.JSON` decodes the reply, unwrapping the code fence a model
+  asked this way tends to add.
+
+### Changed
+- Requires `github.com/goloop/ai` v0.4.0.
+
 ## [0.2.0] - 2026-07-12
 
 ### Fixed

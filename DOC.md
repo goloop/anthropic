@@ -12,6 +12,7 @@ Ukrainian version: **[DOC.UK.md](DOC.UK.md)**.
 - [Creating a client](#creating-a-client)
 - [Generate](#generate)
 - [Stream](#stream)
+- [Structured output](#structured-output)
 - [Tools](#tools)
 - [Images](#images)
 - [Token counting](#token-counting)
@@ -99,6 +100,29 @@ for chunk, err := range c.Stream(ctx, req) {
 
 Stop early simply by breaking out of the range; the underlying response is
 closed for you.
+
+## Structured output
+
+`ai.Request.Format` is honoured, but this provider has no `response_format` of
+its own. The request is put to the model in the system prompt instead, in the
+wording every driver without native support shares:
+
+```go
+resp, err := c.Generate(ctx, &ai.Request{
+	Model:    "the-model",
+	Messages: []ai.Message{ai.UserText("Draft SEO fields for this article.")},
+	Format:   &ai.Format{Type: ai.FormatJSONSchema, Schema: schema},
+})
+
+var seo SEO
+err = resp.JSON(&seo)
+```
+
+Your own system prompt is kept and the instruction follows it. `ai.Response.Format`
+reports `ai.FormatEmulated`, which is worth reading literally: the model was
+asked, not constrained, and a malformed reply means something different here
+than it would from a provider that enforces the shape. `ai.Response.JSON`
+unwraps the code fence a model asked this way tends to add.
 
 ## Tools
 

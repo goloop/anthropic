@@ -154,5 +154,10 @@ func (c *Client) Generate(ctx context.Context, req *ai.Request) (*ai.Response, e
 	if err != nil {
 		return nil, err
 	}
-	return parseResponse(raw)
+	resp, err := parseResponse(raw)
+	if err != nil {
+		return nil, err
+	}
+	resp.Format = formatMode(req.Format)
+	return resp, nil
 }

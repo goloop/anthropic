@@ -15,6 +15,8 @@ AI provider, and adds Anthropic's native endpoints on top.
 - Native endpoints: token counting, model listing and the message batches API.
 - Retries on 429 and 5xx with backoff; normalized, typed API errors.
 - Depends only on `github.com/goloop/ai` and the standard library.
+- Structured output: `ai.Format` is asked for in the system prompt (this
+  provider has no `response_format`); read the reply with `resp.JSON(&v)`.
 
 ## Installation
 

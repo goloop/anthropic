@@ -61,7 +61,22 @@ func (c *Client) buildRequest(req *ai.Request, stream bool) (MessagesRequest, er
 		wr.ToolChoice = convToolChoice(req.ToolChoice)
 	}
 
+	// This provider has no response_format of its own, so a structured
+	// request is asked for in the system prompt, in the wording every driver
+	// without native support shares. It is a request and not a guarantee,
+	// which is what ai.FormatEmulated on the response says.
+	wr.System = req.Format.AppendInstruction(wr.System)
+
 	return wr, nil
+}
+
+// formatMode reports how the request's format was satisfied. Nothing here is
+// enforced by the provider: it is asked for, and the caller is told so.
+func formatMode(f *ai.Format) ai.FormatMode {
+	if f == nil || f.Type == ai.FormatText {
+		return ai.FormatNone
+	}
+	return ai.FormatEmulated
 }
 
 // wireRole maps an ai.Role to an Anthropic role. Tool-result messages are sent
