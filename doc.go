@@ -13,6 +13,15 @@
 //	    Messages: []ai.Message{ai.UserText("Say hello in one word.")},
 //	})
 //
+// # Structured output
+//
+// ai.Request.Format is honoured, but this provider has no response_format of
+// its own, so the request is put to the model in the system prompt - in the
+// wording every driver without native support shares - and ai.Response.Format
+// reports ai.FormatEmulated. Read that literally: the model was asked, not
+// constrained. ai.Response.JSON decodes the reply, unwrapping the code fence a
+// model asked this way tends to add.
+//
 // It speaks the Messages API, including system prompts, multimodal image
 // input, tool use and streaming, and depends only on goloop/ai and the
 // standard library.
