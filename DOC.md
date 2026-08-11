@@ -15,6 +15,7 @@ Ukrainian version: **[DOC.UK.md](DOC.UK.md)**.
 - [Structured output](#structured-output)
 - [Tools](#tools)
 - [Hosted web search](#hosted-web-search)
+- [Capabilities and model-level refusals](#capabilities-and-model-level-refusals)
 - [Images](#images)
 - [Token counting](#token-counting)
 - [Models](#models)
@@ -256,6 +257,28 @@ Anthropic-specific:
 - `WithVersion(v)` - override the `anthropic-version` header.
 - `WithBeta(features...)` - set `anthropic-beta` feature flags.
 - `WithMaxTokens(n)` - default `max_tokens` when a request leaves it unset.
+
+## Capabilities and model-level refusals
+
+This driver implements `ai.Capable`. `ai.CapabilitiesOf(c)` reports what it
+runs and which settings it accepts, and `ai.SupportsHosted` answers before a
+call whether a request as written is known to work - the decision behind
+showing a search control at all, and behind one request or two.
+
+Reported here: web search with a use limit, one domain list (allowed or
+blocked, not both) and a region; `HostedRequired` honoured. `WithFormat` is
+`FormatEmulated` across the board - the format lives in the system prompt, so
+a search and a format hold together, but nothing is enforced.
+
+It is a hint, not a permission: support also depends on the model, the account
+and the region, so `ai.ErrNoHosted` and `ai.ErrNoFormat` remain the source of
+truth. What changed alongside is that a refusal the provider reports only as a
+400 - "this model cannot do that" - now arrives wrapped in those same
+sentinels, so one `errors.Is` covers a limitation the driver knew in advance
+and one it learned over the wire. The provider's own `ai.APIError` stays
+reachable with `errors.As`. The wrapping is deliberately narrow: only a 400,
+only a capability the request actually asked for, only an error naming that
+exact feature.
 
 ## Errors
 
