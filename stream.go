@@ -110,7 +110,7 @@ func (c *Client) Stream(ctx context.Context, req *ai.Request) iter.Seq2[ai.Chunk
 		}
 		resp, err := c.openMessagesStream(ctx, &mreq)
 		if err != nil {
-			yield(ai.Chunk{}, err)
+			yield(ai.Chunk{}, wrapUnsupportedCapability(req, err))
 			return
 		}
 		defer resp.Body.Close()

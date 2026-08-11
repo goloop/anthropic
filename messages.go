@@ -250,7 +250,7 @@ func (c *Client) Generate(ctx context.Context, req *ai.Request) (*ai.Response, e
 	}
 	_, raw, err := c.messages(ctx, &mreq)
 	if err != nil {
-		return nil, err
+		return nil, wrapUnsupportedCapability(req, err)
 	}
 	resp, calls, err := parseResponse(raw)
 	if err != nil {
