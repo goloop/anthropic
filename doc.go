@@ -22,6 +22,38 @@
 // constrained. ai.Response.JSON decodes the reply, unwrapping the code fence a
 // model asked this way tends to add.
 //
+// # Hosted web search
+//
+// ai.Request.Hosted maps onto Anthropic's server-side web search tool, which
+// rides in the same tools list as the caller's own:
+//
+//	resp, err := c.Generate(ctx, &ai.Request{
+//	    Model:    anthropic.ModelClaudeSonnet5,
+//	    Messages: []ai.Message{ai.UserText("What shipped this week?")},
+//	    Hosted:   []ai.Hosted{{Kind: ai.HostedWebSearch}},
+//	})
+//	for _, c := range resp.Citations() { ... }
+//
+// The provider runs the search itself, so its own tool blocks never surface as
+// ai.ToolUse parts: a tool loop sees nothing new and has nothing extra to
+// answer. The sources come back as ai.Citation values on the text they
+// support. Anthropic reports the fragment of the source it used rather than a
+// position in the answer, so Citation.CitedText is filled and the byte range
+// stays zero.
+//
+// ai.Response.Hosted says whether the search actually ran. A model offered a
+// search can answer without it, and the two answers are indistinguishable from
+// the outside; ai.HostedRequired turns that into ai.ErrHostedRequired instead
+// of an answer that only looks researched.
+//
+// Anthropic takes either allowed or blocked domains, never both, so a request
+// that sets both is ai.ErrNoHosted before it leaves. The tool is versioned by
+// date; WithWebSearchTool reaches a version newer than [WebSearchToolType].
+//
+// Search combines with a Format here, because this driver has no native
+// structured output to conflict with it: the format is asked for in the system
+// prompt either way.
+//
 // It speaks the Messages API, including system prompts, multimodal image
 // input, tool use and streaming, and depends only on goloop/ai and the
 // standard library.

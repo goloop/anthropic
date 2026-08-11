@@ -24,19 +24,25 @@ const (
 // Client is an Anthropic API client. It implements [ai.Client] and adds the
 // provider's native endpoints (token counting, models, message batches).
 type Client struct {
-	opts      ai.Options
-	version   string
-	beta      []string
-	maxTokens int
+	opts          ai.Options
+	version       string
+	beta          []string
+	maxTokens     int
+	webSearchType string
 }
 
 var _ ai.Client = (*Client)(nil)
 
 // New returns a Client for the given API key. Shared options (WithBaseURL,
 // WithHTTPClient, WithTimeout, WithMaxRetries, WithHeader) and Anthropic
-// options (WithVersion, WithBeta, WithMaxTokens) configure it.
+// options (WithVersion, WithBeta, WithMaxTokens, WithWebSearchTool) configure
+// it.
 func New(apiKey string, opts ...Option) *Client {
-	s := settings{version: DefaultVersion, maxTokens: DefaultMaxTokens}
+	s := settings{
+		version:       DefaultVersion,
+		maxTokens:     DefaultMaxTokens,
+		webSearchType: WebSearchToolType,
+	}
 	for _, o := range opts {
 		o(&s)
 	}
@@ -47,9 +53,10 @@ func New(apiKey string, opts ...Option) *Client {
 	}
 
 	return &Client{
-		opts:      o,
-		version:   s.version,
-		beta:      s.beta,
-		maxTokens: s.maxTokens,
+		opts:          o,
+		version:       s.version,
+		beta:          s.beta,
+		maxTokens:     s.maxTokens,
+		webSearchType: s.webSearchType,
 	}
 }

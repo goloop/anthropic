@@ -61,6 +61,16 @@ func (c *Client) buildRequest(req *ai.Request, stream bool) (MessagesRequest, er
 		wr.ToolChoice = convToolChoice(req.ToolChoice)
 	}
 
+	// Server-side tools join the same list, after the caller's own. They are
+	// added after the tool choice above is decided, because that choice is
+	// about tools the caller answers: forcing "any" would let the model
+	// satisfy it with a search and never call what the caller asked for.
+	hosted, err := c.hostedTools(req)
+	if err != nil {
+		return MessagesRequest{}, err
+	}
+	wr.Tools = append(wr.Tools, hosted...)
+
 	// This provider has no response_format of its own, so a structured
 	// request is asked for in the system prompt, in the wording every driver
 	// without native support shares. It is a request and not a guarantee,
@@ -144,10 +154,12 @@ func convToolChoice(tc ai.ToolChoice) *ToolChoice {
 }
 
 // parseResponse converts an Anthropic messages response into an ai.Response.
-func parseResponse(body []byte) (*ai.Response, error) {
+// It also returns how many times each server-side tool ran, which the caller
+// pairs with the request to report what was asked for and what happened.
+func parseResponse(body []byte) (*ai.Response, map[ai.HostedKind]int, error) {
 	var wr MessagesResponse
 	if err := json.Unmarshal(body, &wr); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	resp := &ai.Response{
@@ -162,14 +174,24 @@ func parseResponse(body []byte) (*ai.Response, error) {
 	for _, b := range wr.Content {
 		switch b.Type {
 		case "text":
-			resp.Parts = append(resp.Parts, ai.Text{Text: b.Text})
+			resp.Parts = append(resp.Parts, ai.Text{
+				Text:      b.Text,
+				Citations: convCitations(b.Citations),
+			})
 		case "tool_use":
 			resp.Parts = append(resp.Parts, ai.ToolUse{
 				ID:    b.ID,
 				Name:  b.Name,
 				Input: b.Input,
 			})
+
+			// "server_tool_use" and "web_search_tool_result" blocks are
+			// deliberately absent from this switch. They record work
+			// Anthropic already did, and turning them into ai.ToolUse parts
+			// would hand a tool loop a call it is expected to answer and
+			// nobody is waiting for. What they produced reaches the caller
+			// as citations and as the hosted report instead.
 		}
 	}
-	return resp, nil
+	return resp, hostedCalls(wr.Usage), nil
 }

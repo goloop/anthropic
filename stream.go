@@ -36,6 +36,9 @@ type StreamDelta struct {
 	Text        string `json:"text"`
 	PartialJSON string `json:"partial_json"`
 	StopReason  string `json:"stop_reason"`
+
+	// Citation carries one source, on a delta of type "citations_delta".
+	Citation *Citation `json:"citation,omitempty"`
 }
 
 // openMessagesStream opens the streaming /v1/messages connection for a native
@@ -119,6 +122,13 @@ func (c *Client) Stream(ctx context.Context, req *ai.Request) iter.Seq2[ai.Chunk
 		tools := map[int]*toolAcc{}
 		var usage ai.Usage
 
+		// searches is what the provider reported it ran, and blocks is what
+		// was seen going past. The reported count is authoritative because it
+		// is what gets billed, but it does not arrive in every stream, so a
+		// count of the server_tool_use blocks stands in for it. Proving a
+		// search happened matters more than knowing exactly how many.
+		var searches, blocks int
+
 		for data, err := range ai.SSEEvents(resp.Body) {
 			if err != nil {
 				yield(ai.Chunk{}, err)
@@ -135,12 +145,23 @@ func (c *Client) Stream(ctx context.Context, req *ai.Request) iter.Seq2[ai.Chunk
 			case "message_start":
 				if ev.Message != nil {
 					usage.InputTokens = ev.Message.Usage.InputTokens
+					searches += hostedCalls(ev.Message.Usage)[ai.HostedWebSearch]
 				}
 			case "content_block_start":
-				if ev.ContentBlock != nil && ev.ContentBlock.Type == "tool_use" {
+				if ev.ContentBlock == nil {
+					continue
+				}
+				switch ev.ContentBlock.Type {
+				case "tool_use":
 					tools[ev.Index] = &toolAcc{
 						id:   ev.ContentBlock.ID,
 						name: ev.ContentBlock.Name,
+					}
+				case "server_tool_use":
+					// Not accumulated as a tool call: this one is Anthropic's
+					// own, and nobody is waiting for an answer to it.
+					if ev.ContentBlock.Name == webSearchToolName {
+						blocks++
 					}
 				}
 			case "content_block_delta":
@@ -157,6 +178,21 @@ func (c *Client) Stream(ctx context.Context, req *ai.Request) iter.Seq2[ai.Chunk
 				case "input_json_delta":
 					if t := tools[ev.Index]; t != nil {
 						t.buf.WriteString(ev.Delta.PartialJSON)
+					}
+				case "citations_delta":
+					// A source arrives in its own event, after the text it
+					// supports has already been yielded. It is passed on as
+					// it comes rather than held back to be paired with that
+					// text, because holding it back would mean buffering the
+					// answer and giving up what a stream is for.
+					if ev.Delta.Citation != nil {
+						cs := convCitations([]Citation{*ev.Delta.Citation})
+						if !yield(ai.Chunk{
+							Citations: cs,
+							Raw:       json.RawMessage(data),
+						}, nil) {
+							return
+						}
 					}
 				}
 			case "content_block_stop":
@@ -180,10 +216,25 @@ func (c *Client) Stream(ctx context.Context, req *ai.Request) iter.Seq2[ai.Chunk
 			case "message_delta":
 				if ev.Usage != nil {
 					usage.OutputTokens = ev.Usage.OutputTokens
+					searches += hostedCalls(*ev.Usage)[ai.HostedWebSearch]
 				}
 			case "message_stop":
+				if searches == 0 {
+					searches = blocks
+				}
+				reports, err := req.HostedReports(
+					map[ai.HostedKind]int{ai.HostedWebSearch: searches})
+				if err != nil {
+					yield(ai.Chunk{}, err)
+					return
+				}
 				final := usage
-				yield(ai.Chunk{Done: true, Usage: &final, Raw: json.RawMessage(data)}, nil)
+				yield(ai.Chunk{
+					Done:   true,
+					Usage:  &final,
+					Hosted: reports,
+					Raw:    json.RawMessage(data),
+				}, nil)
 				return
 			case "error":
 				msg, typ := "", ""

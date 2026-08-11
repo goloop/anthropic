@@ -10,10 +10,11 @@ import (
 // settings accumulates configuration during New. Shared options are collected
 // as ai.Options; the rest are Anthropic-specific.
 type settings struct {
-	aiOpts    []ai.Option
-	version   string
-	beta      []string
-	maxTokens int
+	aiOpts        []ai.Option
+	version       string
+	beta          []string
+	maxTokens     int
+	webSearchType string
 }
 
 // Option configures a Client in New.
@@ -57,4 +58,12 @@ func WithBeta(features ...string) Option {
 // WithMaxTokens sets the default max_tokens used when a Request leaves it unset.
 func WithMaxTokens(n int) Option {
 	return func(s *settings) { s.maxTokens = n }
+}
+
+// WithWebSearchTool overrides the identifier of the server-side web search
+// tool, which defaults to [WebSearchToolType]. Anthropic versions its server
+// tools by date, so this is the way to reach a newer one without waiting for
+// this package to name it.
+func WithWebSearchTool(t string) Option {
+	return func(s *settings) { s.webSearchType = t }
 }
