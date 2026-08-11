@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-08-11
+
+First stable release, on `ai` v1.0.0.
+
+### Added
+- `ai.Request.Hosted` maps onto the server-side web search tool, which rides in
+  the same tools list as the caller's own. The provider's own tool blocks never
+  surface as `ai.ToolUse` parts, so a tool loop sees nothing new and has nothing
+  extra to answer.
+- Sources come back as `ai.Citation` values on the text they support. This
+  provider reports the fragment of the source it used rather than a position in
+  the answer, so `CitedText` is filled and the byte range stays zero.
+- `ai.Response.Hosted` reports whether the search actually ran, with the count
+  the provider bills for; `ai.HostedRequired` turns a search that did not happen
+  into an error rather than an answer that only looks researched.
+- A stream carries the sources as their events arrive and the report on the
+  final chunk.
+- `WithWebSearchTool` reaches a newer version of the tool than
+  `WebSearchToolType`, which the provider versions by date.
+- `ToolDefinition` gained the fields a server-side tool needs, and `Usage`
+  gained `ServerToolUse`.
+
+### Fixed
+- A content block whose `content` is a list rather than a string no longer
+  fails the whole reply. A web search result block is exactly that shape, so
+  before this one search result would have cost the answer it came with; those
+  results are now read into `ContentBlock.SearchResults`.
+
+### Changed
+- The provider takes either allowed or blocked domains, never both, so a
+  request that sets both is `ai.ErrNoHosted` rather than a search that silently
+  runs wider than it was told to.
+
 ## [0.3.1] - 2026-08-05
 
 ### Documentation

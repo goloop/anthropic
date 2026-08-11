@@ -8,7 +8,6 @@
 AI provider, and adds Anthropic's native endpoints on top.
 
 ## Features
-
 - Messages API: `Generate` for a single response, `Stream` for token-by-token
   output through `iter.Seq2`.
 - Tool use (function calling), multimodal image input and system prompts.
@@ -17,6 +16,9 @@ AI provider, and adds Anthropic's native endpoints on top.
 - Depends only on `github.com/goloop/ai` and the standard library.
 - Structured output: `ai.Format` is asked for in the system prompt (this
   provider has no `response_format`); read the reply with `resp.JSON(&v)`.
+- Hosted web search: `ai.Request.Hosted` maps onto the server-side search
+  tool, with citations on the text they support and a report of whether it
+  actually ran.
 
 ## Installation
 
