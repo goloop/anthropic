@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2026-08-15
+
+Patch release.
+
+### Changed
+- Depends on `ai` v1.2.0, which adds the `Capabilities.Images` hint. This driver
+  does not generate images, so it reports `Images: false` (the default) - no
+  behavior change.
+
 ## [1.1.1] - 2026-08-11
 
 Patch release.
