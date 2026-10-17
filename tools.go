@@ -67,6 +67,7 @@ func (c *Client) send(
 func listAll[T any](ctx context.Context, c *Client, path string, limit int) ([]T, error) {
 	var all []T
 	afterID := ""
+	seen := make(map[string]bool)
 	for {
 		u := fmt.Sprintf("%s?limit=%d", path, limit)
 		if afterID != "" {
@@ -91,6 +92,10 @@ func listAll[T any](ctx context.Context, c *Client, path string, limit int) ([]T
 		if !page.HasMore || page.LastID == "" {
 			return all, nil
 		}
+		if seen[page.LastID] {
+			return nil, fmt.Errorf("anthropic: repeated pagination cursor %q", page.LastID)
+		}
+		seen[page.LastID] = true
 		afterID = page.LastID
 	}
 }

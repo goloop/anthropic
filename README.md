@@ -160,3 +160,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 ## License
 
 MIT - see [LICENSE](LICENSE).
+
+## Release v1.1.4
+
+Stop pagination when the server repeats a cursor.

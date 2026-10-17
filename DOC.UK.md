@@ -291,3 +291,7 @@ if errors.As(err, &apiErr) && apiErr.Status == http.StatusTooManyRequests {
 
 Запити без моделі чи повідомлень падають до мережі з `ai.ErrNoModel` або
 `ai.ErrNoMessages`.
+
+## Реліз v1.1.4
+
+Пагінація повертає помилку, якщо сервер повторює курсор, замість нескінченного повторення запитів.
