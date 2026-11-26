@@ -3,6 +3,7 @@ package anthropic
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/url"
 	"strings"
@@ -97,7 +98,34 @@ func (c *Client) BatchResults(ctx context.Context, b *Batch) ([]BatchResult, err
 		return nil, ErrNoResults
 	}
 
-	resp, err := c.opts.Do(ctx, http.MethodGet, b.ResultsURL, nil, c.headers())
+	base, err := url.Parse(c.opts.BaseURL)
+	if err != nil {
+		return nil, errors.New("invalid batch base URL")
+	}
+	sameOrigin := func(u *url.URL) bool {
+		return u.User == nil && u.Host != "" && strings.EqualFold(u.Scheme, base.Scheme) && strings.EqualFold(u.Host, base.Host)
+	}
+	target, err := url.Parse(b.ResultsURL)
+	if err != nil || !sameOrigin(target) {
+		return nil, errors.New("batch results URL must use the configured origin")
+	}
+	opts := c.opts
+	client := *opts.HTTPClient
+	prior := client.CheckRedirect
+	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		if !sameOrigin(req.URL) {
+			return http.ErrUseLastResponse
+		}
+		if prior != nil {
+			return prior(req, via)
+		}
+		if len(via) >= 10 {
+			return errors.New("too many redirects")
+		}
+		return nil
+	}
+	opts.HTTPClient = &client
+	resp, err := opts.Do(ctx, http.MethodGet, target.String(), nil, c.headers())
 	if err != nil {
 		return nil, err
 	}

@@ -51,7 +51,7 @@ func (c *Client) openMessagesStream(ctx context.Context, req *MessagesRequest) (
 	}
 	h := c.headers()
 	h.Set("accept", "text/event-stream")
-	resp, err := c.opts.Do(ctx, http.MethodPost, c.opts.BaseURL+"/v1/messages", body, h)
+	resp, err := c.opts.DoStream(ctx, http.MethodPost, c.opts.BaseURL+"/v1/messages", body, h)
 	if err != nil {
 		return nil, err
 	}
@@ -90,10 +90,19 @@ func (c *Client) MessagesStream(ctx context.Context, req *MessagesRequest) iter.
 				yield(StreamEvent{}, e)
 				return
 			}
-			if !yield(ev, nil) {
+			if ev.Type == "error" {
+				typ, msg := "", ""
+				if ev.Error != nil {
+					typ, msg = ev.Error.Type, ev.Error.Message
+				}
+				yield(StreamEvent{}, &ai.APIError{Status: streamErrorStatus(typ), Type: typ, Message: msg})
+				return
+			}
+			if !yield(ev, nil) || ev.Type == "message_stop" {
 				return
 			}
 		}
+		yield(StreamEvent{}, io.ErrUnexpectedEOF)
 	}
 }
 
