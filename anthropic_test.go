@@ -208,13 +208,21 @@ func TestCountTokens(t *testing.T) {
 		if !strings.HasSuffix(r.URL.Path, "/count_tokens") {
 			t.Errorf("path = %q", r.URL.Path)
 		}
+		var payload struct {
+			ToolChoice ToolChoice `json:"tool_choice"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil || payload.ToolChoice.Type != "any" {
+			t.Errorf("token-count payload = %+v, error = %v", payload, err)
+		}
 		io.WriteString(w, `{"input_tokens":11}`)
 	})
 	defer done()
 
 	n, err := c.CountTokens(context.Background(), &ai.Request{
-		Model:    "m",
-		Messages: []ai.Message{ai.UserText("count me")},
+		Model:      "m",
+		Messages:   []ai.Message{ai.UserText("count me")},
+		Tools:      []ai.Tool{{Name: "lookup"}},
+		ToolChoice: ai.ToolRequired,
 	})
 	if err != nil {
 		t.Fatal(err)

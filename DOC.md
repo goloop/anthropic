@@ -298,3 +298,7 @@ Requests missing a model or messages fail before the network with
 ## Release v1.1.4
 
 Stop pagination when the server repeats a cursor.
+
+## Request behavior
+
+`CountTokens` sends the same tool choice as the corresponding common message request.

@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Keep batch credentials on the configured origin.
 
+Send tool choice when counting tokens.
+
 ## [1.1.4] - 2026-10-18
 
 Stop pagination when the server repeats a cursor.

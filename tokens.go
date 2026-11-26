@@ -17,15 +17,17 @@ func (c *Client) CountTokens(ctx context.Context, req *ai.Request) (int, error) 
 	}
 
 	payload := struct {
-		Model    string           `json:"model"`
-		System   string           `json:"system,omitempty"`
-		Messages []MessageParam   `json:"messages"`
-		Tools    []ToolDefinition `json:"tools,omitempty"`
+		Model      string           `json:"model"`
+		System     string           `json:"system,omitempty"`
+		Messages   []MessageParam   `json:"messages"`
+		Tools      []ToolDefinition `json:"tools,omitempty"`
+		ToolChoice *ToolChoice      `json:"tool_choice,omitempty"`
 	}{
-		Model:    wr.Model,
-		System:   wr.System,
-		Messages: wr.Messages,
-		Tools:    wr.Tools,
+		Model:      wr.Model,
+		System:     wr.System,
+		Messages:   wr.Messages,
+		Tools:      wr.Tools,
+		ToolChoice: wr.ToolChoice,
 	}
 	body, err := json.Marshal(payload)
 	if err != nil {
